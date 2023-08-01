@@ -20,12 +20,20 @@ db = SQLAlchemy(metadata=metadata)
 class Activity(db.Model, SerializerMixin):
     __tablename__ = 'activities'
 
+    serialize_rules = ( '-signups', '-camper.signups', )
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     difficulty = db.Column(db.Integer)
 
     # Add relationship
-    signups = db.relationship( 'Signup', back_populates = 'activity' )
+
+
+    signups = db.relationship( 'Signup', back_populates = 'activity', 
+        cascade = 'all, delete-orphan' )
+
+
+
     campers = association_proxy( 'signups', 'camper' )
 
     # Add serialization rules
@@ -84,7 +92,7 @@ class Signup(db.Model, SerializerMixin):
     # Add validation
     @validates( 'time' )
     def check_time( self, key, new_time ):
-        if 0 < new_time < 24:
+        if 0 <= new_time < 24:
             return new_time
         raise ValueError( 'time must be during an earth day length' )
 
