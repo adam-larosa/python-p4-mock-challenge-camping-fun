@@ -20,6 +20,55 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
+api = Api( app )
+
+
+class Campers( Resource ):
+
+    def get( self ):
+        return make_response( [ c.to_dict( rules = ( '-signups', ) ) 
+            for c in Camper.query.all() ] )
+
+api.add_resource( Campers, '/campers' )
+
+
+class CampersById( Resource ):
+
+    def get( self, id ):
+        camper = Camper.query.filter_by( id = id ).first()
+        if not camper:
+            return make_response( 
+                { 'error': 'can not find that camper!' }, 404 
+            )
+        return make_response( camper.to_dict() )
+
+    def patch( self, id ):
+        camper = Camper.query.filter_by( id = id ).first()
+        if not camper:
+            return make_response( 
+                { 'error': 'can not find that camper!' }, 404 
+            )
+        data = request.json
+
+        for key in data:
+            try:
+                setattr( camper, key, data[key] )
+            except ValueError as v_error:
+                return make_response( { 'errors': [ str( v_error ) ] }, 422 )
+
+        db.session.commit()
+
+        return make_response( camper.to_dict() )
+
+        
+
+        
+
+api.add_resource( CampersById, '/campers/<int:id>')
+
+
+
+
 
 @app.route('/')
 def home():
